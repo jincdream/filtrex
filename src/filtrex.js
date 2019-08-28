@@ -1,4 +1,4 @@
-const Jison = require("jison").Jison;
+const Jison = require("./lib/jison").Jison;
 
 /**
  * Filtrex provides compileExpression() to compile user expressions to JavaScript.
@@ -50,7 +50,7 @@ function compileExpression(expression, extraFunctions, customProp) {
     js.push(';');
 
     function unknown(funcName) {
-        throw 'Unknown function: ' + funcName + '()';
+        throw ReferenceError('Unknown function: ' + funcName + '()');
     }
 
     function coerceBoolean(value) {
@@ -77,7 +77,13 @@ function compileExpression(expression, extraFunctions, customProp) {
     var func = new Function('functions', 'data', 'unknown', 'prop', js.join(''));
 
     return function(data) {
-        return func(functions, data, unknown, prop);
+        try {
+            return func(functions, data, unknown, prop);
+        }
+        catch (e)
+        {
+            return e;
+        }
     };
 }
 
@@ -128,7 +134,7 @@ function filtrexParser() {
                 ['\\s+',  ''], // skip whitespace
                 ['[0-9]+(?:\\.[0-9]+)?\\b', 'return "NUMBER";'], // 212.321
 
-                ['[a-zA-Z][\\.a-zA-Z0-9_]*',
+                ['[a-zA-Z$_][\\.a-zA-Z0-9$_]*',
                  `yytext = JSON.stringify(yytext);
                   return "SYMBOL";`
                 ], // some.Symbol22
@@ -140,12 +146,10 @@ function filtrexParser() {
                   return "SYMBOL";`
                 ], // 'some-symbol'
 
-                ['"(?:[^"])*"',
-                 `yytext = JSON.stringify(
-                     yytext.substr(1, yyleng-2)
-                  );
+                [`"(?:\\\\"|\\\\\\\\|[^"\\\\])*"`,
+                 `yytext = JSON.stringify(""+JSON.parse(yytext));
                   return "STRING";`
-                ], // "foo"
+                ], // "any \"escaped\" string"
 
                 // End
                 ['$', 'return "EOF";'],

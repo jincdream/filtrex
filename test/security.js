@@ -26,7 +26,7 @@ describe('Security', () => {
             'constructor.constructor.name.replace("",constructor.constructor("global.p0wned=true"))'
         );
 
-        expect( evil ).throws();
+        expect( evil() ).is.instanceOf(Error);
         
         expect( global.p0wned ).equals(false);
     });
@@ -57,9 +57,24 @@ describe('Security', () => {
     });
 
 
-    it('does backslash escaping', () =>
-        expect( compileExpression(`"\\" + '\\'`)({'\\':'good'}) ).equals('\\good')
-    );
+    it('does backslash escaping', () => {
+        expect( compileExpression('"\\\\"')({}) ).equals('\\');
+        expect( compileExpression(`"\\\\" + '\\'`)({'\\':'good'}) ).equals('\\good');
+        expect( compileExpression(`"\\\\" + '\\\\'`)({'\\\\':'good'}) ).equals('\\good');
+
+        // Invalid escape sequences:
+        expect( () => compileExpression('"\\"') ).throws(); 
+        expect( () => compileExpression('"a\\"') ).throws();
+        expect( () => compileExpression('"a\\" == "; global.p0wned = true; //"') ).throws();
+
+        // JS escape sequences other than \" and \\ are not allowed in Filtrex strings:
+        expect( () => compileExpression('"\\r"') ).throws(); 
+        expect( () => compileExpression('"\\n"') ).throws(); 
+        expect( () => compileExpression('"\\x13"') ).throws(); 
+        expect( () => compileExpression('"\\u0013"') ).throws(); 
+
+        expect( global.p0wned ).equals(false);
+    });
 
 
     it('in() is not vulnerable to Object.prototype extensions ', () => {
@@ -74,6 +89,17 @@ describe('Security', () => {
             compileExpression('a', {}, (name, get) => get(name))
             (Object.create({ a:1 }))
         ).equals(undefined);
-    })
+    });
 
+
+    it('supports double quotes inside strings', () => {
+        expect( compileExpression('"\\"test\\""')({}) ).equals('"test"');
+    });
+
+
+    it('cannot throw an error', () => {
+        let f = compileExpression('throw()', { throw: () => {throw new Error;} });
+        expect( f ).does.not.throw();
+        expect( f() ).is.instanceOf(Error);
+    });
 });
