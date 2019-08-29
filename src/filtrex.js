@@ -11,7 +11,18 @@ const Jison = require("./lib/jison").Jison;
  * -Joe Walnes
  */
 exports.compileExpression =
-function compileExpression(expression, extraFunctions, customProp) {
+function compileExpression(expression, options) {
+
+    if (arguments.length > 2) throw new TypeError('Too many arguments.');
+
+    options = typeof options === "object" ? options : {};
+    let {extraFunctions, customProp} = options;
+    for (let key of Object.getOwnPropertyNames(options))
+    {
+        if (key !== "extraFunctions" && key !== "customProp") throw new TypeError(`Unknown option: ${key}`);
+    }
+
+
     var functions = {
         abs: Math.abs,
         ceil: Math.ceil,
@@ -49,8 +60,19 @@ function compileExpression(expression, extraFunctions, customProp) {
     tree.forEach(toJs);
     js.push(';');
 
+    function isfn(funcName) {
+        return functions.hasOwnProperty(funcName) && typeof functions[funcName] === "function";
+    }
+
     function unknown(funcName) {
         throw ReferenceError('Unknown function: ' + funcName + '()');
+    }
+
+    function coerceArray(value) {
+        if (Array.isArray(value))
+            return value;
+        else
+            return [value];
     }
 
     function coerceBoolean(value) {
@@ -70,15 +92,22 @@ function compileExpression(expression, extraFunctions, customProp) {
         }
     }
 
+    function isSubset(a, b) {
+        const A = coerceArray(a);
+        const B = coerceArray(b);
+        return +A.every( val => B.includes(val) );
+    }
+
     if (typeof customProp === 'function') {
         prop = (name, obj) => coerceBoolean(customProp(name, safeGetter(obj), obj));
     }
 
-    var func = new Function('functions', 'data', 'unknown', 'prop', js.join(''));
+    let func = new Function('functions', 'data', 'std', js.join(''));
+    let std = { unknown, prop, isfn, isSubset };
 
     return function(data) {
         try {
-            return func(functions, data, unknown, prop);
+            return func(functions, data, std);
         }
         catch (e)
         {
@@ -202,12 +231,12 @@ function filtrexParser() {
                 ['( array , e )', code(['[', 2, ',', 4, ']'])],
                 ['NUMBER' , code([1])],
                 ['STRING' , code([1])],
-                ['SYMBOL' , code(['prop(', 1, ', data)'])],
-                ['SYMBOL of e', code(['prop(', 1, ',', 3, ')'])],
-                ['SYMBOL ( )', code(['(functions.hasOwnProperty(', 1, ') ? functions[', 1, ']() : unknown(', 1, '))'])],
-                ['SYMBOL ( argsList )', code(['(functions.hasOwnProperty(', 1, ') ? functions[', 1, '](', 3, ') : unknown(', 1, '))'])],
-                ['e in ( inSet )', code(['+(function(o) { return ', 4, '; })(', 1, ')'])],
-                ['e not in ( inSet )', code(['+!(function(o) { return ', 5, '; })(', 1, ')'])],
+                ['SYMBOL' , code(['std.prop(', 1, ', data)'])],
+                ['SYMBOL of e', code(['std.prop(', 1, ',', 3, ')'])],
+                ['SYMBOL ( )', code(['(std.isfn(', 1, ') ? functions[', 1, ']() : std.unknown(', 1, '))'])],
+                ['SYMBOL ( argsList )', code(['(std.isfn(', 1, ') ? functions[', 1, '](', 3, ') : std.unknown(', 1, '))'])],
+                ['e in e', code(['std.isSubset(', 1, ', ', 3, ')'])],
+                ['e not in e', code(['+!std.isSubset(', 1, ', ', 4, ')'])],
             ],
             argsList: [
                 ['e', code([1], true)],
