@@ -1,6 +1,6 @@
 {
   "name": "@m93a/filtrex",
-  "version": "2.1.0-beta1",
+  "version": "2.1.0-beta2",
   "description": "A simple, safe, JavaScript Filter Expression compiler for end-users",
   "main": "src/filtrex.js",
   "author": "m93a <m93a.cz@gmail.com>",
