@@ -42,7 +42,9 @@ describe('Various other things', () => {
 
     it('string support', () => {
         expect( eval('foo == "hello"', {foo:'hello'}) ).equals(1);
+        expect( eval('foo === "hello"', {foo:'hello'}) ).equals(1);
         expect( eval('foo == "hello"', {foo:'bye'  }) ).equals(0);
+        expect( eval('foo === "hello"', {foo:'bye'  }) ).equals(0);
         expect( eval('foo != "hello"', {foo:'hello'}) ).equals(0);
         expect( eval('foo != "hello"', {foo:'bye'  }) ).equals(1);
         expect( eval('foo in ("aa", "bb")', {foo:'aa'}) ).equals(1);

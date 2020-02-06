@@ -1,10 +1,10 @@
 {
-  "name": "filtrex",
+  "name": "filtrex-x",
   "version": "2.0.0",
   "description": "A simple, safe, JavaScript Filter Expression compiler for end-users",
   "main": "src/filtrex.js",
-  "repository": "git@github.com:m93a/filtrex.git",
-  "author": "m93a <m93a.cz@gmail.com>",
+  "repository": "git@github.com:jincdream/filtrex.git",
+  "author": "jinc",
   "contributors": [
     "joewalnes",
     "msantos"

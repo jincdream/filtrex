@@ -129,7 +129,6 @@ function compileExpression(expression, options) {
 
 
     // Compile the expression
-
     let tree = compileExpression.parser.parse(expression);
 
     let js = [];
@@ -210,6 +209,7 @@ function filtrexParser() {
                 ['\\(', 'return "(";'],
                 ['\\)', 'return ")";'],
                 ['\\,', 'return ",";'],
+                ['===', 'return "===";'],
                 ['==', 'return "==";'],
                 ['\\!=', 'return "!=";'],
                 ['\\~=', 'return "~=";'],
@@ -257,7 +257,7 @@ function filtrexParser() {
             ['left', 'or'],
             ['left', 'and'],
             ['left', 'in'],
-            ['left', '==', '!=', '~='],
+            ['left', '===', '==', '!=', '~='],
             ['left', '<', '<=', '>', '>='],
             ['left', '+', '-'],
             ['left', '*', '/', '%'],
@@ -282,6 +282,7 @@ function filtrexParser() {
                 ['e and e', code(['Number(', 1, '&&', 3, ')'])],
                 ['e or e' , code(['Number(', 1, '||', 3, ')'])],
                 ['not e'  , code(['Number(!', 2, ')'])],
+                ['e === e' , code(['Number(', 1, '===', 3, ')'])],
                 ['e == e' , code(['Number(', 1, '==', 3, ')'])],
                 ['e != e' , code(['Number(', 1, '!=', 3, ')'])],
                 ['e ~= e' , code(['Number(RegExp(', 3, ').test(', 1, '))'])],
@@ -307,7 +308,8 @@ function filtrexParser() {
             ],
             inSet: [
                 ['e', code(['o ==', 1], true)],
-                ['inSet , e', code([1, '|| o ==', 3], true)],
+                ['inSet , e', code([1, '|| o ===', 3], true)],
+                ['inSet , e', code([1, '|| o ==', 3], true)]
             ],
             array: [
                 ['e', code([1])],
